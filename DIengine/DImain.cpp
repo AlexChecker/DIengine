@@ -34,15 +34,16 @@ void DIApp::run()
 void DIApp::initWindow()
 {
 	//Просто тестил логгер. Теперь с цветным выводом!
-	//DILog::logConsole(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_MESSAGE));
-	//DILog::logConsole(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_INFO));
-	//DILog::logConsole(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_WARN));
-	//DILog::logConsole(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_ERROR));
-	//DILog::logConsole(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_FATAL));
+	//DILog::log(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_MESSAGE));
+	//DILog::log(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_INFO));
+	//DILog::log(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_WARN));
+	//DILog::log(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_ERROR));
+	//DILog::log(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_FATAL));
 
 	if (DI_APP_SCREEN_TITLE.empty())
 	{
-		DI_APP_SCREEN_TITLE = std::format("DIengine ver {0}.{1}-{2}", DIENGINE_VER_MAJOR, DIENGINE_VER_MINOR,DIENGINE_VER_PATCH);
+		DI_APP_SCREEN_TITLE = std::format("DIengine ver {0}.{1}.{2}", DIENGINE_VER_MAJOR, DIENGINE_VER_MINOR,DIENGINE_VER_PATCH);
+		DILog::log(DILog::DILogMessage(std::format("DIengine ver {0}.{1}-{2}", DIENGINE_VER_MAJOR, DIENGINE_VER_MINOR, DIENGINE_VER_PATCH), __LINE__, __FILE__, DILog::DI_LOG_LEVEL_MESSAGE));
 	}
 	if (DI_APP_NAME.empty())
 	{
@@ -101,6 +102,7 @@ void DIApp::createInstance()
 
 	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
 	{
+		DILog::log(DILog::DILogMessage("vkCreateInstance failed!", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_FATAL));
 		throw std::runtime_error("failed to create instance!");
 	}
 

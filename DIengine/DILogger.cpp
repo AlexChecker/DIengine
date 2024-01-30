@@ -3,7 +3,7 @@
 namespace DILog {
 	DI_LOG_MODE LOG_MODE = DI_LOG_CONSOLE;
 
-	void DILog::logConsole(DILogMessage message)
+	void DILog::log(DILogMessage message)
 	{
 		{
 			//TODO: Сделать мультиплатформенный вывод ошибок. Хотя бы для мака и линукса

@@ -43,6 +43,6 @@ namespace DILog
 		}
 
 	};
-	void logConsole(DILogMessage message);
+	void log(DILogMessage message);
 
 }

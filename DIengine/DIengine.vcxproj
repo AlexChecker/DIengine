@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="DILogger.cpp" />
     <ClCompile Include="DImain.cpp" />
+    <ClCompile Include="DImain_vk.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DILogger.h" />

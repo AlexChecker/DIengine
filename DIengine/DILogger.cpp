@@ -1,6 +1,7 @@
 #include "DILogger.h"
 
 namespace DILog {
+
 	DI_LOG_MODE LOG_MODE = DI_LOG_CONSOLE;
 
 	void DILog::log(DILogMessage message)
@@ -33,7 +34,22 @@ namespace DILog {
 					}
 
 					std::cout << std::format("{0} [{1}]: {2}", message.source, message.line, message.message) << std::endl;
+					SetConsoleTextAttribute(hConsole, 0x07);
 #endif
+				}
+			}
+		}
+	}
+	void logVector(DILogMessage header, std::vector<std::string> data)
+	{
+		if (LOG_MODE != DI_NO_LOG)
+		{
+			if (LOG_MODE == DI_LOG_CONSOLE)
+			{
+				std::cout << std::format("{0} [{1}]: {2}", header.source, header.line, header.message) << std::endl;
+				for (std::string str : data)
+				{
+					std::cout << '\t' << str << std::endl;
 				}
 			}
 		}

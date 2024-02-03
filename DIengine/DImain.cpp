@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
 {
-	DIApp app;
+	DIEngine::DIApp app;
 	try
 	{
 		DIinitApp();
@@ -19,19 +19,19 @@ int main(int argc, char** argv)
 	return NO_ERROR;
 }
 
-void DIApp::init()
+void DIEngine::DIApp::init()
 {
 	initWindow();
 	initVulkan();
 }
 
-void DIApp::run()
+void DIEngine::DIApp::run()
 {
 	mainLoop();
 	cleanup();
 }
 
-bool DIApp::checkValidationSupport()
+bool DIEngine::DIApp::checkValidationSupport()
 {
 	uint32_t layer_count = 0;
 	vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
@@ -60,7 +60,7 @@ bool DIApp::checkValidationSupport()
 	return true;
 }
 
-void DIApp::setupDebugMessenger()
+void DIEngine::DIApp::setupDebugMessenger()
 {
 	if (!enableValidation) return;
 
@@ -80,7 +80,7 @@ void DIApp::setupDebugMessenger()
 	}
 }
 
-void DIApp::initWindow()
+void DIEngine::DIApp::initWindow()
 {
 	//Просто тестил логгер. Теперь с цветным выводом!
 	//DILog::log(DILog::DILogMessage("test", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_MESSAGE));
@@ -104,7 +104,7 @@ void DIApp::initWindow()
 
 }
 
-void DIApp::mainLoop()
+void DIEngine::DIApp::mainLoop()
 {
 	while (!glfwWindowShouldClose(window))
 	{
@@ -113,7 +113,7 @@ void DIApp::mainLoop()
 	}
 }
 
-void DIApp::cleanup()
+void DIEngine::DIApp::cleanup()
 {
 	if (enableValidation) {
 		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
@@ -124,7 +124,7 @@ void DIApp::cleanup()
 	glfwTerminate();
 }
 
-std::vector<const char*> DIApp::getExtensions()
+std::vector<const char*> DIEngine::DIApp::getExtensions()
 {
 	uint32_t ext_count = 0;
 	const char** glfw_ext;
@@ -141,14 +141,15 @@ std::vector<const char*> DIApp::getExtensions()
 
 
 
-void DIApp::initVulkan()
+void DIEngine::DIApp::initVulkan()
 {
 	createInstance();
 	setupDebugMessenger();
 	pickPhysDevice();
+	createLogicalDevice();
 }
 
-void DIApp::createInstance()
+void DIEngine::DIApp::createInstance()
 {
 	if (enableValidation && !checkValidationSupport())
 	{

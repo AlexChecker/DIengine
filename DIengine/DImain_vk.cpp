@@ -4,7 +4,7 @@
 //This file used for Vulkan init stuff that can be moved from main cpp file
 //and does not depend on variables from header
 
-VkResult DIApp::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+VkResult DIEngine::DIApp::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
 {
 	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 	if (func != nullptr) {
@@ -15,7 +15,7 @@ VkResult DIApp::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugU
 	}
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL DIApp::callback_debug(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+VKAPI_ATTR VkBool32 VKAPI_CALL DIEngine::DIApp::callback_debug(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
 	switch (messageSeverity)
 	{
@@ -35,7 +35,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DIApp::callback_debug(VkDebugUtilsMessageSeverity
 	return VK_FALSE;
 }
 
-void DIApp::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+void DIEngine::DIApp::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
 {
 	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 	if (func != nullptr) {
@@ -43,11 +43,45 @@ void DIApp::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMesse
 	}
 }
 
+void DIEngine::DIApp::createLogicalDevice()
+{
+	familyIndices indices = findQueueFamilies(graphics_card);
+
+	VkDeviceQueueCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	createInfo.queueFamilyIndex = indices.graphiics_family.value();
+	createInfo.queueCount = 1;
+
+	float  queuePriority = 1.0f;
+	createInfo.pQueuePriorities = &queuePriority;
+}
+
+DIEngine::familyIndices DIEngine::DIApp::findQueueFamilies(VkPhysicalDevice device)
+{
+	familyIndices indices;
+
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+	std::vector<VkQueueFamilyProperties> props(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, props.data());
+	int i = 0;
+	for (int i = 0; i < queueFamilyCount; i++)
+	{
+		if (props.at(i).queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			indices.graphiics_family = i;
+		}
+		if (indices.graphiics_family.has_value()) break;
+	}
+
+	return indices;
+}
+
 /// <summary>
 /// Lists and picks up first suitable GPU
 /// </summary>
-
-void DIApp::pickPhysDevice()
+void DIEngine::DIApp::pickPhysDevice()
 {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -82,7 +116,7 @@ void DIApp::pickPhysDevice()
 	
 }
 
-void DIApp::logPhysicalDeviceNames(std::vector<VkPhysicalDevice> devices)
+void DIEngine::DIApp::logPhysicalDeviceNames(std::vector<VkPhysicalDevice> devices)
 {
 	std::vector<std::string> deviceNames;
 	
@@ -95,14 +129,16 @@ void DIApp::logPhysicalDeviceNames(std::vector<VkPhysicalDevice> devices)
 	DILog::logVector(DILog::DILogMessage("Graphics cards found: ", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_MESSAGE), deviceNames);
 }
 
-bool DIApp::isDeviceSuitable(VkPhysicalDevice device)
+bool DIEngine::DIApp::isDeviceSuitable(VkPhysicalDevice device)
 {
+	familyIndices indices = findQueueFamilies(device);
+
 	VkPhysicalDeviceProperties		deviceProps;
 	VkPhysicalDeviceFeatures		deviceFeatures;
 
 	vkGetPhysicalDeviceProperties(device, &deviceProps);
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 	
-	return deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
+	return deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader && indices.graphiics_family.has_value();
 }
 

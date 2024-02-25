@@ -5,6 +5,12 @@
 int main(int argc, char** argv)
 {
 	DIEngine::DIApp app;
+#ifndef _DEBUG
+	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+#else
+	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+#endif
+
 	try
 	{
 		DIinitApp();
@@ -98,6 +104,7 @@ void DIEngine::DIApp::initWindow()
 	{
 		DI_APP_NAME = "DIengine project";
 	}
+	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	window = glfwCreateWindow(DI_APP_SCREEN_WIDTH,DI_APP_SCREEN_HEIGHT,DI_APP_SCREEN_TITLE.c_str(), nullptr, nullptr);
@@ -115,10 +122,11 @@ void DIEngine::DIApp::mainLoop()
 
 void DIEngine::DIApp::cleanup()
 {
+	vkDestroyDevice(device, nullptr);
 	if (enableValidation) {
 		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 	}
-
+	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
 	glfwDestroyWindow(window);
 	glfwTerminate();
@@ -145,6 +153,7 @@ void DIEngine::DIApp::initVulkan()
 {
 	createInstance();
 	setupDebugMessenger();
+	createSurface();
 	pickPhysDevice();
 	createLogicalDevice();
 }

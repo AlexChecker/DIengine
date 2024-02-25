@@ -47,18 +47,66 @@ void DIEngine::DIApp::createLogicalDevice()
 {
 	familyIndices indices = findQueueFamilies(graphics_card);
 
-	VkDeviceQueueCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	createInfo.queueFamilyIndex = indices.graphiics_family.value();
-	createInfo.queueCount = 1;
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	std::set<uint32_t> uniqueQueueFamilies = { indices.graphiics_family.value(), indices.present_family.value()};
 
-	float  queuePriority = 1.0f;
-	createInfo.pQueuePriorities = &queuePriority;
+	float queuePriority = 1.0f;
+
+	for (uint32_t queueFamily : uniqueQueueFamilies)
+	{
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = queueFamily;
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+		queueCreateInfos.push_back(queueCreateInfo);
+	}
+
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	VkDeviceCreateInfo deviceInfo{};
+	deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	deviceInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+	deviceInfo.pQueueCreateInfos = queueCreateInfos.data();
+	deviceInfo.queueCreateInfoCount = 1;
+	deviceInfo.pEnabledFeatures = &deviceFeatures;
+	deviceInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+	deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+	if (enableValidation)
+	{
+		deviceInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		deviceInfo.ppEnabledLayerNames = validationLayers.data();
+	}
+	else
+	{
+		deviceInfo.enabledLayerCount = 0;
+	}
+
+
+	if (vkCreateDevice(graphics_card, &deviceInfo, nullptr, &device) != VK_SUCCESS)
+	{
+		DILog::log(DILog::DILogMessage("Failed to create logical device!", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_FATAL));
+		throw std::runtime_error("Failed to create logical device!");
+	}
+
+	vkGetDeviceQueue(device, indices.graphiics_family.value(), 0, &graphicsQueue);
+	vkGetDeviceQueue(device, indices.present_family.value(), 0, &presentQueue);
+}
+void DIEngine::DIApp::createSurface()
+{
+	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+	{
+		DILog::log(DILog::DILogMessage("Failed to create window surface!", __LINE__, __FILE__, DILog::DI_LOG_LEVEL_FATAL));
+		throw std::runtime_error("");
+	}
 }
 
 DIEngine::familyIndices DIEngine::DIApp::findQueueFamilies(VkPhysicalDevice device)
 {
 	familyIndices indices;
+
+
 
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -68,6 +116,9 @@ DIEngine::familyIndices DIEngine::DIApp::findQueueFamilies(VkPhysicalDevice devi
 	int i = 0;
 	for (int i = 0; i < queueFamilyCount; i++)
 	{
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+		if (presentSupport) indices.present_family = i;
 		if (props.at(i).queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
 			indices.graphiics_family = i;
@@ -138,7 +189,26 @@ bool DIEngine::DIApp::isDeviceSuitable(VkPhysicalDevice device)
 
 	vkGetPhysicalDeviceProperties(device, &deviceProps);
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+	bool extesionsupported = checkDeviceExtensionSupport(device);
 	
-	return deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader && indices.graphiics_family.has_value();
+	return deviceProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader && indices.isComplete() && extesionsupported;
 }
 
+bool DIEngine::DIApp::checkDeviceExtensionSupport(VkPhysicalDevice device)
+{
+	uint32_t extensionCount;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+	for(const auto& extension : availableExtensions)
+	{
+		requiredExtensions.erase(extension.extensionName);
+    }
+
+	return requiredExtensions.empty();
+}
